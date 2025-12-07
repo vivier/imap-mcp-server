@@ -179,5 +179,62 @@ async def get_header(directory: str, uid: str) -> dict:
 
     return {}
 
+@mcp.tool
+async def get_text(directory: str, uid: str) -> str:
+    """Read message text for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+
+    Return:
+        A dict of fields of RFC2822 message header
+    """
+
+    message = get_message(directory, uid)
+
+    if message:
+        return message[0].text
+
+    return {}
+
+@mcp.tool
+async def get_html(directory: str, uid: str) -> str:
+    """Read message html for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+
+    Return:
+        A dict of fields of RFC2822 message header
+    """
+
+    message = get_message(directory, uid)
+
+    if message:
+        return message[0].html
+
+    return {}
+
+@mcp.tool
+async def get_size(directory: str, uid: str) -> int:
+    """Read message size for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+
+    Return:
+        A dict of fields of RFC2822 message header
+    """
+
+    message = get_message(directory, uid)
+
+    if mails:
+        return mails[0].size
+
+    return 0
+
 if __name__ == "__main__":
     mcp.run(transport='stdio')
