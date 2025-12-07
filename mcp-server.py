@@ -155,5 +155,51 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
 
     return uids
 
+def get_message(directory: str, uid: str, headers_only: bool = True):
+    """Read message for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+        headers_only: if True, fetch only headers to avoid downloading bodies
+
+    Return:
+        single message object or None if not found
+    """
+
+    current_folder = mailbox.folder.get()
+    message = None
+    try:
+        mailbox.folder.set(directory)
+        for mail in mailbox.fetch(f'UID {uid}', mark_seen=False, headers_only=headers_only):
+            # Only need the first match; UID should be unique.
+            message = mail
+            break
+    finally:
+        mailbox.folder.set(current_folder)
+
+    return message
+
+@mcp.tool
+async def get_header(directory: str, uid: str) -> dict:
+    """Read message header for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+
+    Return:
+        Dict of header names to list of values
+    """
+
+    message = get_message(directory, uid, headers_only=True)
+
+    if not message:
+        return {}
+
+    headers = message.headers
+    # Convert tuple values to lists for JSON friendliness.
+    return {key: list(values) for key, values in headers.items()}
+
 if __name__ == "__main__":
     mcp.run(transport='stdio')
