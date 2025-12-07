@@ -66,5 +66,76 @@ async def mailboxes_status(directory:str) -> dict[str, int]:
 
     return { 'MESSAGES': status['MESSAGES'], 'RECENT': status['RECENT'], 'UNSEEN': status['UNSEEN'] }
 
+@mcp.tool
+async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
+    """Search for messages in a given mailbox with given criteria
+       Return a list of message ids
+
+    Args:
+        directory: mailbox to get the list, search doesn't include child folders
+        criteria: a string containing criteria to search the messages
+
+        directory can be like "INBOX" for the inbox, "Sent" for sent emails,
+        "Drafts" for draft emails, "Trash" for trashed email; you can get the
+        list with list_mailboxes("", "*")
+
+        Possible criteria:
+            ALL                     all emails
+            ANSWERED/UNANSWERED     with/without the Answered flag
+            SEEN/UNSEEN             with/without the Seen flag
+            FLAGGED/UNFLAGGED       with/without the Flagged flag
+            DRAFT/UNDRAFT           with/without the Draft flag
+            DELETED/UNDELETED       with/without the Deleted flag
+            NEW/OLD                 with/without the recent flag
+            FROM "email"            with email address in the FROM field
+            TO "email"              with email address in the TO field
+            SUBJECT "subject"       with subject in the SUBJECT field
+            BODY "string"           with string in the BODY of the message
+            TEXT "string"           with string in the HEADER or the BODY
+            BCC "email"             with email in the BCC field
+            CC "email"              with email in the CC field
+            ON DD-MM-YYYY           with internal date is within DD-MM-YYYY day
+                                    (DD-MM-YYYY is RFC2822 date, i.e. 15-Mar-2000)
+            SINCE DD-MM-YYYY        with internal date is within or later DD-MM-YYYY
+            BEFORE DD-MM-YYYY       with internal date os earlier than DD-MM-YYYY
+            SENTON DD-MM-YYYY       header is within the specified date
+            SENTSINCE DD-MM-YYYY    header is within or later than the specified date
+            SENTBEFORE DD-MM-YYYY   header is earlier than the specified date
+            LARGER SIZE             size is larger than SIZE in bytes
+            SMALLER SIZE            size is smaller than SIZE in bytes
+            HEADER "tag" "string"   header tag contains string
+            X-GM-LABELS "string"    have this gmail label
+            UID uid_list            have have an uid in the uid_list (like 1,2,23)
+
+        Criteria are combined with AND/OR/NOT in IMAP prefix form:
+
+            - AND is implicit: writing `SEEN UNANSWERED` means SEEN AND
+              UNANSWERED.
+            - NOT only negates the next search key: `NOT ON 01-Jan-2025`
+              excludes that day; add further keys after it to AND them.
+            - OR is binary: `OR FROM "a@example" FROM "b@example"` matches
+              either sender. To OR more than two terms, nest: `OR FROM "a"
+              OR FROM "b" FROM "c"`. Any criteria after the OR chain are ANDed
+              with the result (e.g., `OR FROM "a" FROM "b" TO "list@x.com"`).
+
+    Notes:
+        Sent emails are in the "Sent" mailbox
+        Draft emails are in "Drafts" mailbox
+        Deleted emails are in "Trash" mailbox
+
+    Return a list like:
+        [ '250735', '250737', '250738', '250739', '250743', '250747', '250755']
+    """
+
+    current_folder = mailbox.folder.get()
+
+    mailbox.folder.set(directory)
+
+    uids = mailbox.uids(criteria)
+
+    mailbox.folder.set(current_folder)
+
+    return uids
+
 if __name__ == "__main__":
     mcp.run(transport='stdio')
