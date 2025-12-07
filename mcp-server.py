@@ -43,12 +43,28 @@ async def list_mailboxes(directory:str, pattern:str) -> list:
         - Paths in results are absolute from the root (so use INBOX/...).
     """
 
-
     mailboxes = [ ]
     for f in mailbox.folder.list(folder=directory, search_args=pattern):
         mailboxes.append(f.name)
     
     return mailboxes
+
+@mcp.tool
+async def mailboxes_status(directory:str) -> dict[str, int]:
+    """Get the status of a mailbox
+       Return the number of messages in the mailbox,
+       and the number of recent messages and unseen message
+
+    Args:
+        directory: mailbox to get the status
+
+    Return a status like:
+        { 'MESSAGES': 41, 'RECENT': 0, 'UNSEEN': 5 }
+    """
+
+    status = mailbox.folder.status(directory)
+
+    return { 'MESSAGES': status['MESSAGES'], 'RECENT': status['RECENT'], 'UNSEEN': status['UNSEEN'] }
 
 if __name__ == "__main__":
     mcp.run(transport='stdio')
