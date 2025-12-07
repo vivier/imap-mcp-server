@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 from fastmcp import FastMCP
 from imap_tools import MailBox
 from dotenv import load_dotenv
@@ -9,6 +10,15 @@ load_dotenv()
 IMAP_HOST = os.getenv("IMAP_HOST")
 IMAP_LOGIN = os.getenv("IMAP_LOGIN")
 IMAP_PASSWORD = os.getenv("IMAP_PASSWORD")
+
+missing_env = [name for name, value in {
+    "IMAP_HOST": IMAP_HOST,
+    "IMAP_LOGIN": IMAP_LOGIN,
+    "IMAP_PASSWORD": IMAP_PASSWORD,
+}.items() if not value]
+
+if missing_env:
+    sys.exit(f"Missing required environment variables: {', '.join(missing_env)}")
 
 mailbox = MailBox(IMAP_HOST).login(IMAP_LOGIN, IMAP_PASSWORD)
 
