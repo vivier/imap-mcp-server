@@ -201,5 +201,62 @@ async def get_header(directory: str, uid: str) -> dict:
     # Convert tuple values to lists for JSON friendliness.
     return {key: list(values) for key, values in headers.items()}
 
+@mcp.tool
+async def get_text(directory: str, uid: str) -> str:
+    """Read plain text body for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+
+    Return:
+        Plain text body, empty string if not found
+    """
+
+    message = get_message(directory, uid, headers_only=False)
+
+    if message:
+        return message.text or ""
+
+    return ""
+
+@mcp.tool
+async def get_html(directory: str, uid: str) -> str:
+    """Read HTML body for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+
+    Return:
+        HTML body, empty string if not found
+    """
+
+    message = get_message(directory, uid, headers_only=False)
+
+    if message:
+        return message.html or ""
+
+    return ""
+
+@mcp.tool
+async def get_size(directory: str, uid: str) -> int:
+    """Read message size for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+
+    Return:
+        Message size in bytes, 0 if not found
+    """
+
+    message = get_message(directory, uid, headers_only=False)
+
+    if message:
+        return message.size
+
+    return 0
+
 if __name__ == "__main__":
     mcp.run(transport='stdio')
