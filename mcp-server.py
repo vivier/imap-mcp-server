@@ -122,6 +122,8 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
         Sent emails are in the "Sent" mailbox
         Draft emails are in "Drafts" mailbox
         Deleted emails are in "Trash" mailbox
+        UIDs are only valid relatively to the giver directory
+        Sent, Draft, Trash are at root level, not undex INBOX/
 
     Return a list like:
         [ '250735', '250737', '250738', '250739', '250743', '250747', '250755']
@@ -136,6 +138,46 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
     mailbox.folder.set(current_folder)
 
     return uids
+
+def get_message(directory: str, uid: str):
+    """Read message for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+
+    Return:
+        the message
+    """
+
+    current_folder = mailbox.folder.get()
+    try:
+        mailbox.folder.set(directory)
+        # Materialize the generator before switching folders back to avoid lazy fetch issues.
+        mails = list(mailbox.fetch(f'UID {uid}', mark_seen=False))
+    finally:
+        mailbox.folder.set(current_folder)
+
+    return mails
+
+@mcp.tool
+async def get_header(directory: str, uid: str) -> dict:
+    """Read message header for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uid: uid of the message to read
+
+    Return:
+        A dict of fields of RFC2822 message header
+    """
+
+    message = get_message(directory, uid)
+
+    if message:
+        return message[0].headers
+
+    return {}
 
 if __name__ == "__main__":
     mcp.run(transport='stdio')
