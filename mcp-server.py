@@ -117,32 +117,46 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
             X-GM-LABELS "string"    have this gmail label
             UID uid_list            have have an uid in the uid_list (like 1,2,23)
 
-        Criteria are combined with AND/OR/NOT in IMAP prefix form:
+    IMAP4 prefix-form search criteria (RFC 3501):
 
-            - AND is implicit:
+        Criteria are written in prefix (Polish) notation. Multiple criteria at the same
+        level are implicitly combined with AND. OR and NOT are explicit. Parentheses
+        group search keys.
+
+        AND (implicit):
+            Listing criteria in sequence means all must match.
                 SEEN UNANSWERED FLAGGED
-                    means
+            is interpreted as:
                 SEEN AND UNANSWERED AND FLAGGED
 
-              and has many operands needed.
-
-            - NOT only negates the operand:
+        NOT:
+            Negates a single search key, which may itself be a parenthesized group.
                 NOT ON 01-Jan-2025
-              excludes that day
+            matches messages not from that date.
+                NOT (SEEN UNANSWERED FLAGGED)
+            matches messages that are not simultaneously seen, unanswered and flagged.
 
-              but operand can be criteria
+        OR:
+            OR takes exactly two search keys:
+                OR FROM "a@example" FROM "b@example"
+            matches messages from either a@example or b@example.
 
-              NOT (SEEN UNANSWERED FLAGGED)
+            To OR more than two conditions, nest OR:
+                OR FROM "a@example" OR FROM "b@example" FROM "c@example"
+            matches messages from a@example, b@example or c@example.
 
-            - OR has many operand as neededa:
+            Additional criteria after an OR are AND-ed:
+                OR FROM "a@example" FROM "b@example" ON 01-Jan-2025
+            means:
+                (FROM "a@example" OR FROM "b@example") AND ON 01-Jan-2025
 
-                OR FROM a@example FROM b@example ON 01-Jan-2025
+    Parentheses:
+        Used to group search keys (for AND, OR, and NOT).
+            (SEEN UNANSWERED FLAGGED)
+        is an AND group.
 
-              it can be negated with
-
-                NOT ( OR FROM a@example FROM b@example ON 01-Jan-2025 )
-
-            - Parenthesis are used to define OR and AND operand groups
+            NOT (OR FROM "boss@example" FROM "hr@example")
+        matches messages not from boss@example and not from hr@example.
 
     Notes:
         Sent emails are in the "Sent" mailbox
