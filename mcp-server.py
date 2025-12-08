@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+import datetime
 from fastmcp import FastMCP
 from imap_tools import MailBox
 from dotenv import load_dotenv
@@ -184,6 +185,7 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
         Deleted emails are in "Trash" mailbox
         UIDs are only valid relatively to the given directory
         Sent, Draft, Trash are at root level, not undex INBOX/
+        Full text search is not supported
 
     Return a list like:
         [ '250735', '250737', '250738', '250739', '250743', '250747', '250755']
@@ -208,7 +210,7 @@ def get_messages(directory: str, uids: list, headers_only: bool = True) -> list:
         headers_only: if True, fetch only headers to avoid downloading bodies
 
     Return:
-        single message object or None if not found
+        list of message object
     """
 
     current_folder = mailbox.folder.get()
@@ -239,7 +241,7 @@ async def get_header(directory: str, uids: list) -> list:
         uids: list of uids of the messages to read
 
     Return:
-        Dict of header names to list of values
+        List of dict of header names to list of values
 
     Notes: charset is utf-8
     """
@@ -262,7 +264,7 @@ async def get_text(directory: str, uids: list) -> list:
         uids: list of uids of the messages to read
 
     Return:
-        Plain text body, empty string if not found
+        list of plain text body
     Notes: charset is utf-8
     """
 
@@ -283,7 +285,7 @@ async def get_html(directory: str, uids: str) -> list:
         uids: list of uids of the messages to read
 
     Return:
-        HTML body, empty string if not found
+        list of HTML body
     Notes: charset is utf-8
     """
 
@@ -304,7 +306,7 @@ async def get_size(directory: str, uids: list) -> list:
         uids: list of uids of the messages to read
 
     Return:
-        Message size in bytes, 0 if not found
+        list of message size in bytes
     """
 
     messages = get_messages(directory, uids, headers_only=True)
