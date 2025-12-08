@@ -48,6 +48,11 @@ def list_patches_of_a_series(cover_letter: str) -> str:
     """
     return f'Search emails with In-Reply-To equal to Message-ID of {cover_letter}'
 
+@mcp.prompt
+def review_a_patch_series() -> str:
+    """Generates a user message how to do a review on a patch series"""
+    return "When replying to reviews or patch series: reply to each message individually, include the full original message inline, and place your comment directly beneath the specific line you are annotating. Format your answer on 80 columns"
+
 @mcp.tool
 async def whoami() -> str:
     """Returns the configured email address for the current account.
