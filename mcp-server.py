@@ -56,17 +56,17 @@ async def list_mailboxes(directory:str, pattern:str) -> list:
         for the list of the flags of the mailbox.
 
         Flags (RFC 6154):
-            \HasNoChildren      mailbox has no child mailbox
-            \Sent               mailbox is the Sent mailbox
-            \Junk               mailbox is the Junk mailbox
-            \Drafts             mailbox is the Drafts mailbox
-            \Flagged            mailbox presents all messages marked in some way as "important"
-            \Archive            mailbox is used to archive messages
-            \All                mailbox presents all messages in the user's message store
-            \Trash              mailbox is the Trash mailbox
+            \\HasNoChildren     mailbox has no child mailbox
+            \\Sent              mailbox is the Sent mailbox
+            \\Junk              mailbox is the Junk mailbox
+            \\Drafts            mailbox is the Drafts mailbox
+            \\Flagged           mailbox presents all messages marked in some way as "important"
+            \\Archive           mailbox is used to archive messages
+            \\All               mailbox presents all messages in the user's message store
+            \\Trash             mailbox is the Trash mailbox
                                 In some server implementations, this might be a virtual mailbox,
                                 containing messages from other mailboxes that are marked with
-                                the "\Deleted" message flag.
+                                the "\\Deleted" message flag.
     Notes:
         - Paths in results are absolute from the root (so use INBOX/...).
     """
