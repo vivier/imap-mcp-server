@@ -43,7 +43,7 @@ def check_IMAP():
 
 @mcp.prompt
 def list_patches_of_a_series(cover_letter: str) -> str:
-    """Generates a user messages to list the patch of the series of a given cover letter,
+    """Generates a user message to list the patches of the series of a given cover letter,
        i.e [PATCH 0/X], provides [PATCH 1/X] to [PATCH X/X]
     """
     return f'Search emails with In-Reply-To equal to Message-ID of {cover_letter}'
