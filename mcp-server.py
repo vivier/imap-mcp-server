@@ -315,5 +315,32 @@ async def get_size(directory: str, uids: list) -> list:
 
     return sizes
 
+@mcp.tool
+async def create_message(content: str, date: str | None = None):
+    """Create a message in Drafts folder
+
+    Args:
+        content: raw content of the mail
+        date: optional ISO-8601 datetime string used for the IMAP APPEND timestamp
+
+    Return:
+        dict containing IMAP append status and server data (bytes decoded to str)
+
+    Notes:
+        In the header, use the current date and time
+        Check the date in the header before calling create_message
+    """
+
+    # imap_tools.append expects RFC 822 bytes; encode the provided text as UTF-8.
+    status, data = mailbox.append(content.encode("utf-8"), 'Drafts')
+
+    # imaplib returns a list of bytes; convert to strings for JSON friendliness.
+    decoded_data = [
+        item.decode("utf-8", errors="replace") if isinstance(item, (bytes, bytearray)) else item
+        for item in data or []
+    ]
+
+    return {"status": status, "data": decoded_data}
+    
 if __name__ == "__main__":
     mcp.run(transport='stdio')
