@@ -38,7 +38,7 @@ async def list_mailboxes(directory:str, pattern:str) -> list:
     Args:
         directory: base folder to search (e.g. "INBOX" for standard inbox,
                    INBOX/Trash for standard trash folder, ...)
-                   if empty - get from root
+                   if empty - get from root, includes "Sent", "Trash", "Drafts", "Junk", ...
         pattern:   glob-like match for names directory (e.g., "*" for all children, 
                    and for instance "Archives*" to match all archives folders
                    * is a wildcard, and matches zero or more characters at this position
@@ -49,13 +49,33 @@ async def list_mailboxes(directory:str, pattern:str) -> list:
         - Only Archives tree: list_mailboxes("Archives")
         - Root-level folders starting with “Q”: list_mailboxes("INBOX", "Q*").
 
+    Return:
+        return a list of mailboxes, in the form of a list of key and value:
+        PATH for the full path, DELIMITER for the patch delimiter and FLAGS
+        for the list of the flags of the mailbox.
+
+        Flags (RFC 6154):
+            \HasNoChildren      mailbox has no child mailbox
+            \Sent               mailbox is the Sent mailbox
+            \Junk               mailbox is the Junk mailbox
+            \Drafts             mailbox is the Drafts mailbox
+            \Flagged            mailbox presents all messages marked in some way as "important"
+            \Archive            mailbox is used to archive messages
+            \All                mailbox presents all messages in the user's message store
+            \Trash              mailbox is the Trash mailbox
+                                In some server implementations, this might be a virtual mailbox,
+                                containing messages from other mailboxes that are marked with
+                                the "\Deleted" message flag.
     Notes:
         - Paths in results are absolute from the root (so use INBOX/...).
     """
 
     mailboxes = [ ]
     for f in mailbox.folder.list(folder=directory, search_args=pattern):
-        mailboxes.append(f.name)
+        mailboxes.append( { 'PATH': f.name,
+                            'DELIMITER': f.delim,
+                            'FLAGS': [ flag for flag in f.flags ]
+                           } )
     
     return mailboxes
 
