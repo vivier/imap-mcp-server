@@ -173,7 +173,7 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
 
     try:
         mailbox.folder.set(directory)
-        uids = mailbox.uids(criteria)
+        uids = mailbox.uids(criteria, charset="utf8")
     finally:
         mailbox.folder.set(current_folder)
 
@@ -202,6 +202,7 @@ def get_messages(directory: str, uids: list, headers_only: bool = True) -> list:
                 f'UID {",".join(uids)}',
                 mark_seen=False,
                 headers_only=headers_only,
+                charset="utf8"
             )
         )
     finally:
@@ -219,6 +220,8 @@ async def get_header(directory: str, uids: list) -> list:
 
     Return:
         Dict of header names to list of values
+
+    Notes: charset is utf-8
     """
 
     messages = get_messages(directory, uids, headers_only=True)
@@ -240,6 +243,7 @@ async def get_text(directory: str, uids: list) -> list:
 
     Return:
         Plain text body, empty string if not found
+    Notes: charset is utf-8
     """
 
     messages = get_messages(directory, uids, headers_only=False)
@@ -260,6 +264,7 @@ async def get_html(directory: str, uids: str) -> list:
 
     Return:
         HTML body, empty string if not found
+    Notes: charset is utf-8
     """
 
     messages = get_messages(directory, uids, headers_only=False)
