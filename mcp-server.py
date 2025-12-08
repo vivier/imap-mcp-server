@@ -3,6 +3,7 @@ import os
 import sys
 import datetime
 from fastmcp import FastMCP
+from fastmcp.prompts.prompt import Message, PromptMessage, TextContent
 from imap_tools import MailBox
 from dotenv import load_dotenv
 
@@ -39,6 +40,13 @@ def check_IMAP():
         except Exception:
             pass
         mailbox = connect_IMAP()
+
+@mcp.prompt
+def list_patches_of_a_series(cover_letter: str) -> str:
+    """Generates a user messages to list the patch of the series of a given cover letter,
+       i.e [PATCH 0/X], provides [PATCH 1/X] to [PATCH X/X]
+    """
+    return f'Search emails with In-Reply-To equal to Message-ID of {cover_letter}'
 
 @mcp.tool
 async def whoami() -> str:
@@ -203,6 +211,8 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
         UIDs are only valid relatively to the given directory
         Sent, Draft, Trash are at root level, not undex INBOX/
         Full text search is not supported
+        Never provides message ids (uid) to the user, they are not useful
+        for him
 
     Return a list like:
         [ '250735', '250737', '250738', '250739', '250743', '250747', '250755']
