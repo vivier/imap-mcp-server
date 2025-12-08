@@ -10,12 +10,7 @@ description = "Minimal MCP server that bridges an MCP-capable agent to an IMAP m
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "Laurent Vivier" }, { email = "laurent@vivier.eu" }]
+dependencies = [ "fastmcp", "imap-tools", "python-dotenv" ]
 
 [project.urls]
 Homepage = "https://github.com/vivier/imap-mcp-server"
-
-dependencies = [
-  "fastmcp",
-  "imap-tools",
-  "python-dotenv",
-]
