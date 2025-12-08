@@ -171,11 +171,11 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
 
     current_folder = mailbox.folder.get()
 
-    mailbox.folder.set(directory)
-
-    uids = mailbox.uids(criteria)
-
-    mailbox.folder.set(current_folder)
+    try:
+        mailbox.folder.set(directory)
+        uids = mailbox.uids(criteria)
+    finally:
+        mailbox.folder.set(current_folder)
 
     return uids
 
