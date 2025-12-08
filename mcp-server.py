@@ -234,7 +234,7 @@ def get_messages(directory: str, uids: list, headers_only: bool = True) -> list:
 
     Args:
         directory: directory to read from
-        uids: list of uids of the messages to read
+        uids: an array of UID strings
         headers_only: if True, fetch only headers to avoid downloading bodies
 
     Return:
@@ -267,7 +267,7 @@ async def get_header(directory: str, uids: list) -> list:
 
     Args:
         directory: directory to read from
-        uids: list of uids of the messages to read
+        uids: an array of UID strings
 
     Return:
         List of dict of header names to list of values
@@ -290,7 +290,7 @@ async def get_text(directory: str, uids: list) -> list:
 
     Args:
         directory: directory to read from
-        uids: list of uids of the messages to read
+        uids: an array of UID strings
 
     Return:
         list of plain text body
@@ -311,7 +311,7 @@ async def get_html(directory: str, uids: str) -> list:
 
     Args:
         directory: directory to read from
-        uids: list of uids of the messages to read
+        uids: an array of UID strings
 
     Return:
         list of HTML body
@@ -332,7 +332,7 @@ async def get_size(directory: str, uids: list) -> list:
 
     Args:
         directory: directory to read from
-        uids: list of uids of the messages to read
+        uids: an array of UID strings
 
     Return:
         list of message size in bytes
