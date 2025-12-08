@@ -179,12 +179,12 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
 
     return uids
 
-def get_message(directory: str, uid: str, headers_only: bool = True):
+def get_messages(directory: str, uids: list, headers_only: bool = True) -> list:
     """Read message for the given uid in directory
 
     Args:
         directory: directory to read from
-        uid: uid of the message to read
+        uids: list of uids of the messages to read
         headers_only: if True, fetch only headers to avoid downloading bodies
 
     Return:
@@ -192,95 +192,103 @@ def get_message(directory: str, uid: str, headers_only: bool = True):
     """
 
     current_folder = mailbox.folder.get()
-    message = None
+
     try:
         mailbox.folder.set(directory)
-        for mail in mailbox.fetch(f'UID {uid}', mark_seen=False, headers_only=headers_only):
-            # Only need the first match; UID should be unique.
-            message = mail
-            break
+        # Consume the generator before restoring the previous folder to ensure
+        # fetch calls target the intended mailbox.
+        messages = list(
+            mailbox.fetch(
+                f'UID {",".join(uids)}',
+                mark_seen=False,
+                headers_only=headers_only,
+            )
+        )
     finally:
         mailbox.folder.set(current_folder)
 
-    return message
+    return messages
 
 @mcp.tool
-async def get_header(directory: str, uid: str) -> dict:
+async def get_header(directory: str, uids: list) -> list:
     """Read message header for the given uid in directory
 
     Args:
         directory: directory to read from
-        uid: uid of the message to read
+        uids: list of uids of the messages to read
 
     Return:
         Dict of header names to list of values
     """
 
-    message = get_message(directory, uid, headers_only=True)
+    messages = get_messages(directory, uids, headers_only=True)
 
-    if not message:
-        return {}
+    headers = [ ]
+    for message in messages:
+        # Convert tuple values to lists for JSON friendliness.
+        headers.append( {key: list(values) for key, values in message.headers.items()})
 
-    headers = message.headers
-    # Convert tuple values to lists for JSON friendliness.
-    return {key: list(values) for key, values in headers.items()}
+    return headers
 
 @mcp.tool
-async def get_text(directory: str, uid: str) -> str:
+async def get_text(directory: str, uids: list) -> list:
     """Read plain text body for the given uid in directory
 
     Args:
         directory: directory to read from
-        uid: uid of the message to read
+        uids: list of uids of the messages to read
 
     Return:
         Plain text body, empty string if not found
     """
 
-    message = get_message(directory, uid, headers_only=False)
+    messages = get_messages(directory, uids, headers_only=False)
 
-    if message:
-        return message.text or ""
+    texts = [ ]
+    for message in messages:
+        texts.append(message.text)
 
-    return ""
+    return texts
 
 @mcp.tool
-async def get_html(directory: str, uid: str) -> str:
+async def get_html(directory: str, uids: str) -> list:
     """Read HTML body for the given uid in directory
 
     Args:
         directory: directory to read from
-        uid: uid of the message to read
+        uids: list of uids of the messages to read
 
     Return:
         HTML body, empty string if not found
     """
 
-    message = get_message(directory, uid, headers_only=False)
+    messages = get_messages(directory, uids, headers_only=False)
 
-    if message:
-        return message.html or ""
+    html = [ ]
+    for message in messages:
+        html.append(message.html)
 
-    return ""
+    return html
 
 @mcp.tool
-async def get_size(directory: str, uid: str) -> int:
+async def get_size(directory: str, uids: list) -> list:
     """Read message size for the given uid in directory
 
     Args:
         directory: directory to read from
-        uid: uid of the message to read
+        uids: list of uids of the messages to read
 
     Return:
         Message size in bytes, 0 if not found
     """
 
-    message = get_message(directory, uid, headers_only=False)
+    messages = get_messages(directory, uids, headers_only=True)
 
-    if message:
-        return message.size
+    sizes = [ ]
+    for message in messages:
+        sizes.append(message.size_rfc822)
 
-    return 0
+    return sizes
 
 if __name__ == "__main__":
     mcp.run(transport='stdio')
