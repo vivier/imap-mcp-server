@@ -21,9 +21,24 @@ missing_env = [name for name, value in {
 if missing_env:
     sys.exit(f"Missing required environment variables: {', '.join(missing_env)}")
 
-mailbox = MailBox(IMAP_HOST).login(IMAP_LOGIN, IMAP_PASSWORD)
-
 mcp = FastMCP("mailbox")
+
+def connect_IMAP() -> MailBox:
+    """Create a fresh IMAP connection and authenticate."""
+    return MailBox(IMAP_HOST).login(IMAP_LOGIN, IMAP_PASSWORD)
+
+def check_IMAP():
+    """Check the IMAP connection is alive; reconnect if needed."""
+    global mailbox
+    try:
+        # NOOP validates the socket without changing state
+        mailbox.client.noop()
+    except:
+        try:
+            mailbox.logout()
+        except Exception:
+            pass
+        mailbox = connect_IMAP()
 
 @mcp.tool
 async def whoami() -> str:
@@ -72,6 +87,7 @@ async def list_mailboxes(directory:str, pattern:str) -> list:
     """
 
     mailboxes = [ ]
+    check_IMAP()
     for f in mailbox.folder.list(folder=directory, search_args=pattern):
         mailboxes.append( { 'PATH': f.name,
                             'DELIMITER': f.delim,
@@ -93,6 +109,7 @@ async def mailboxes_status(directory:str) -> dict[str, int]:
         { 'MESSAGES': 41, 'RECENT': 0, 'UNSEEN': 5 }
     """
 
+    check_IMAP()
     status = mailbox.folder.status(directory)
 
     return { 'MESSAGES': status['MESSAGES'], 'RECENT': status['RECENT'], 'UNSEEN': status['UNSEEN'] }
@@ -191,6 +208,7 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
         [ '250735', '250737', '250738', '250739', '250743', '250747', '250755']
     """
 
+    check_IMAP()
     current_folder = mailbox.folder.get()
 
     try:
@@ -213,6 +231,7 @@ def get_messages(directory: str, uids: list, headers_only: bool = True) -> list:
         list of message object
     """
 
+    check_IMAP()
     current_folder = mailbox.folder.get()
 
     try:
@@ -333,6 +352,8 @@ async def create_message(content: str, date: str | None = None):
         Check the date in the header before calling create_message
     """
 
+    check_IMAP()
+
     # imap_tools.append expects RFC 822 bytes; encode the provided text as UTF-8.
     status, data = mailbox.append(content.encode("utf-8"), 'Drafts')
 
@@ -343,6 +364,8 @@ async def create_message(content: str, date: str | None = None):
     ]
 
     return {"status": status, "data": decoded_data}
+
+mailbox = connect_IMAP()
     
 if __name__ == "__main__":
     mcp.run(transport='stdio')
