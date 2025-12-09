@@ -18,7 +18,9 @@ Notes:
 
 ## Requirements
 - Python 3.10+
-- An IMAP account with host, username, and password/app password.
+- An IMAP account with host, username, and either:
+  - Password/app password (traditional authentication), or
+  - OAuth2 token (for Gmail and other OAuth-enabled providers)
 
 ## Setup
 1) (Recommended) `python3 -m venv .venv && source .venv/bin/activate`
@@ -27,13 +29,35 @@ Notes:
 ## Configuration
 The server reads credentials from environment variables; a `.env` file is supported via `python-dotenv`.
 
+### Traditional IMAP Authentication
+For standard IMAP servers:
 ```
 IMAP_HOST=imap.example.com
 IMAP_LOGIN=user@example.com
 IMAP_PASSWORD=app-specific-password
 ```
 
-Keep credentials out of version control and prefer app passwords when possible.
+### Gmail OAuth2 Authentication
+For Gmail using OAuth2:
+```
+IMAP_HOST=imap.gmail.com
+IMAP_LOGIN=user@gmail.com
+IMAP_TOKEN=your-oauth2-access-token
+```
+
+To obtain a Gmail OAuth2 token:
+1) Create OAuth2 credentials in Google Cloud Console
+   - Enable Gmail API for your project
+   - Create OAuth 2.0 Client ID (Desktop application)
+   - Note your client ID and client secret
+2) Run the token helper script:
+   ```
+   python3 gmail_auth.py --client-id YOUR_CLIENT_ID --client-secret YOUR_CLIENT_SECRET
+   ```
+3) Follow the browser prompt to authorize access
+4) Copy the `access_token` to your `.env` file as `IMAP_TOKEN`
+
+Keep credentials out of version control and prefer app passwords or OAuth2 tokens when possible.
 
 ## Run
 - Direct execution: `python mcp-server.py`
