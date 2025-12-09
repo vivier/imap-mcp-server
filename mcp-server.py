@@ -11,22 +11,28 @@ load_dotenv()
 
 IMAP_HOST = os.getenv("IMAP_HOST")
 IMAP_LOGIN = os.getenv("IMAP_LOGIN")
-IMAP_PASSWORD = os.getenv("IMAP_PASSWORD")
 
 missing_env = [name for name, value in {
     "IMAP_HOST": IMAP_HOST,
     "IMAP_LOGIN": IMAP_LOGIN,
-    "IMAP_PASSWORD": IMAP_PASSWORD,
 }.items() if not value]
 
 if missing_env:
     sys.exit(f"Missing required environment variables: {', '.join(missing_env)}")
 
+IMAP_PASSWORD = os.getenv("IMAP_PASSWORD")
+IMAP_TOKEN = os.getenv("IMAP_TOKEN")
+
 mcp = FastMCP("mailbox")
 
 def connect_IMAP() -> MailBox:
     """Create a fresh IMAP connection and authenticate."""
-    return MailBox(IMAP_HOST).login(IMAP_LOGIN, IMAP_PASSWORD)
+    if IMAP_PASSWORD is not None:
+        return MailBox(IMAP_HOST).login(IMAP_LOGIN, IMAP_PASSWORD)
+    elif IMAP_TOKEN is not None:
+        return MailBox(IMAP_HOST).xoauth2(IMAP_LOGIN, IMAP_TOKEN)
+    else:
+        return None
 
 def check_IMAP():
     """Check the IMAP connection is alive; reconnect if needed."""
@@ -381,6 +387,8 @@ async def create_message(content: str, date: str | None = None):
     return {"status": status, "data": decoded_data}
 
 mailbox = connect_IMAP()
+if mailbox == None:
+    sys.exit(1)
     
 if __name__ == "__main__":
     mcp.run(transport='stdio')
