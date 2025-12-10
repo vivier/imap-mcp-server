@@ -50,14 +50,14 @@ def check_IMAP():
 
 @mcp.prompt
 def list_patches_of_a_series(cover_letter: str) -> str:
-    """Generates a user message to list the patches of the series of a given cover letter,
-       i.e [PATCH 0/X], provides [PATCH 1/X] to [PATCH X/X]
+    """Generates a user message to list all patches in a series given a cover letter.
+       For a cover letter [PATCH 0/X], this will find patches [PATCH 1/X] to [PATCH X/X]
     """
     return f'Search emails with In-Reply-To equal to Message-ID of {cover_letter}'
 
 @mcp.prompt
 def review_a_patch_series() -> str:
-    """Generates a user message how to do a review on a patch series"""
+    """Generates a user message with instructions on how to properly review a patch series"""
     return "When replying to reviews or patch series: reply to each message individually, include the full original message inline, and place your comment directly beneath the specific line you are annotating. Format your answer on 80 columns"
 
 @mcp.tool
@@ -87,7 +87,7 @@ async def list_mailboxes(directory:str, pattern:str) -> list:
 
     Return:
         return a list of mailboxes, in the form of a list of key and value:
-        PATH for the full path, DELIMITER for the patch delimiter and FLAGS
+        PATH for the full path, DELIMITER for the path delimiter and FLAGS
         for the list of the flags of the mailbox.
 
         Flags (RFC 6154):
@@ -165,7 +165,7 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
             ON DD-MM-YYYY           with internal date is within DD-MM-YYYY day
                                     (DD-MM-YYYY is RFC2822 date, i.e. 15-Mar-2000)
             SINCE DD-MM-YYYY        with internal date is within or later DD-MM-YYYY
-            BEFORE DD-MM-YYYY       with internal date os earlier than DD-MM-YYYY
+            BEFORE DD-MM-YYYY       with internal date is earlier than DD-MM-YYYY
             SENTON DD-MM-YYYY       header is within the specified date
             SENTSINCE DD-MM-YYYY    header is within or later than the specified date
             SENTBEFORE DD-MM-YYYY   header is earlier than the specified date
@@ -221,7 +221,7 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
         Draft emails are in "Drafts" mailbox
         Deleted emails are in "Trash" mailbox
         UIDs are only valid relatively to the given directory
-        Sent, Draft, Trash are at root level, not undex INBOX/
+        Sent, Draft, Trash are at root level, not under INBOX/
         Full text search is not supported
         Never provides message ids (uid) to the user, they are not useful
         for him
@@ -318,7 +318,7 @@ async def get_text(directory: str, uids: list) -> list:
     return texts
 
 @mcp.tool
-async def get_html(directory: str, uids: str) -> list:
+async def get_html(directory: str, uids: list) -> list:
     """Read HTML body for the given uid in directory
 
     Args:
@@ -369,14 +369,14 @@ async def get_keywords(directory: str, uids: list) -> list:
     Return:
         list of uid and keywords
 
-        Example for get_keywords('INBOX', '250855,250856'):
+        Example for get_keywords('INBOX', ['250855', '250856']):
 
         [ {'250855': ['\\Flagged', '\\Seen', 'NonJunk']},
-          {'250856': ['\\Answered', '\\Seen', 'NonJunk']}i ]
+          {'250856': ['\\Answered', '\\Seen', 'NonJunk']} ]
 
     Notes:
-        keyword    | general meaning
-        --------+----------------
+        keyword | general meaning
+        --------+-----------------
         $label1 | Important
         $label2 | Work
         $label3 | Personal
