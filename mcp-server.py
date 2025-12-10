@@ -297,6 +297,31 @@ async def get_header(directory: str, uids: list) -> list:
     return headers
 
 @mcp.tool
+async def get_header_field(directory: str, uids: list, field:str) -> list:
+    """Read a message header field for the given uid in directory
+
+    Args:
+        directory: directory to read from
+        uids: an array of UID strings
+        field: header field to return value
+
+    Return:
+        List of field value
+
+    Notes: charset is utf-8
+    """
+
+    messages = get_messages(directory, uids, headers_only=True)
+
+    headers = [ ]
+    for message in messages:
+        for key, value in message.headers.items():
+            if key == field.lower():
+                headers.append(value)
+
+    return headers
+
+@mcp.tool
 async def get_text(directory: str, uids: list) -> list:
     """Read plain text body for the given uid in directory
 
