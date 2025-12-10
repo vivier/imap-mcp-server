@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import re
 import sys
 import datetime
 from fastmcp import FastMCP
@@ -357,6 +358,57 @@ async def get_size(directory: str, uids: list) -> list:
 
     return sizes
 
+@mcp.tool
+async def get_keywords(directory: str, uids: list) -> list:
+    """Read the keywords for the given uids in directory
+
+    Args:
+        directory: directory to read from
+        uids: an array of UID strings
+
+    Return:
+        list of uid and keywords
+
+        Example for get_keywords('INBOX', '250855,250856'):
+
+        [ {'250855': ['\\Flagged', '\\Seen', 'NonJunk']},
+          {'250856': ['\\Answered', '\\Seen', 'NonJunk']}i ]
+
+    Notes:
+        keyword    | general meaning
+        --------+----------------
+        $label1 | Important
+        $label2 | Work
+        $label3 | Personal
+        $label4 | To Do
+        $label5 | Later
+
+        To search message with a given keyword use search() with criteria KEYWORD,
+        for instance: search('INBOX', 'KEYWORD $label2')
+    """
+
+    check_IMAP()
+    current_folder = mailbox.folder.get()
+
+    try:
+        mailbox.folder.set(directory)
+        # Consume the generator before restoring the previous folder to ensure
+        # fetch calls target the intended mailbox.
+        flags = list( mailbox.client.uid('FETCH', f'{",".join(uids)} (FLAGS)'))
+    finally:
+        mailbox.folder.set(current_folder)
+
+    result = [ ]
+    if flags[0] != 'OK':
+        return result
+
+    for flag in flags[1]:
+        uid = re.search(r'UID\s+(\S+)', flag.decode()).group(1)
+        f = re.search(r'FLAGS\s+\(([^)]*)\)', flag.decode()).group(1).split()
+        result.append( { uid: list(f) } )
+
+    return result
+ 
 @mcp.tool
 async def create_message(content: str, date: str | None = None):
     """Create a message in Drafts folder
