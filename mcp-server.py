@@ -160,6 +160,7 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
             SUBJECT "subject"       with subject in the SUBJECT field
             BODY "string"           with string in the BODY of the message
             TEXT "string"           with string in the HEADER or the BODY
+            KEYWORD keyword         message has the given keyword/label (use atoms without quotes: KEYWORD AI)
             BCC "email"             with email in the BCC field
             CC "email"              with email in the CC field
             ON DD-MM-YYYY           with internal date is within DD-MM-YYYY day
@@ -225,6 +226,8 @@ async def search(directory:str = 'INBOX', criteria:str = 'ALL') -> list:
         Full text search is not supported
         Never provides message ids (uid) to the user, they are not useful
         for him
+        When searching by keyword, pass the label as an atom (no inner quotes).
+        For example: search('INBOX', 'KEYWORD AI'), not search('INBOX', 'KEYWORD "AI"').
 
     Return a list like:
         [ '250735', '250737', '250738', '250739', '250743', '250747', '250755']
