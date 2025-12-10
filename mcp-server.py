@@ -410,12 +410,11 @@ async def get_keywords(directory: str, uids: list) -> list:
     return result
  
 @mcp.tool
-async def create_message(content: str, date: str | None = None):
+async def create_message(content: str) -> str:
     """Create a message in Drafts folder
 
     Args:
         content: raw content of the mail
-        date: optional ISO-8601 datetime string used for the IMAP APPEND timestamp
 
     Return:
         dict containing IMAP append status and server data (bytes decoded to str)
