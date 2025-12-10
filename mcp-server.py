@@ -410,6 +410,41 @@ async def get_keywords(directory: str, uids: list) -> list:
     return result
  
 @mcp.tool
+async def change_keywords(directory: str, uids:list, keywords: list, set:bool) -> list:
+    """Change given keywords to a list of uids
+
+    Args:
+        directory: directory to read from
+        uids: an array of UID strings
+        keywords: keyword to add
+        set: if true, set the keywords, otherwise unset
+
+    Return:
+        The list of the keywords for each uid (same format as get_keywords())
+    """
+
+    check_IMAP()
+    current_folder = mailbox.folder.get()
+
+    try:
+        mailbox.folder.set(directory)
+        status, keywords = mailbox.client.uid('STORE',
+                                              f'{",".join(uids)} {"+" if set else "-"}FLAGS ({" ".join(keywords)})')
+    finally:
+        mailbox.folder.set(current_folder)
+
+    result = [ ]
+    if status != 'OK':
+        return result
+
+    for keyword in keywords:
+        uid = re.search(r'UID\s+(\S+)', keyword.decode()).group(1)
+        f = re.search(r'FLAGS\s+\(([^)]*)\)', keyword.decode()).group(1).split()
+        result.append( { uid: list(f) } )
+
+    return result
+
+@mcp.tool
 async def create_message(content: str) -> str:
     """Create a message in Drafts folder
 
