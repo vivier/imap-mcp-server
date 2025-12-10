@@ -371,6 +371,8 @@ async def create_message(content: str, date: str | None = None):
     Notes:
         In the header, use the current date and time
         Check the date in the header before calling create_message
+        If the message is a reply to another one, its "In-Reply-To" header
+        must contain the "Message-ID" of the original message.
     """
 
     check_IMAP()
