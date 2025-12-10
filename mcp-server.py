@@ -26,7 +26,7 @@ IMAP_TOKEN = os.getenv("IMAP_TOKEN")
 
 mcp = FastMCP("mailbox")
 
-def connect_IMAP() -> MailBox:
+def connect_IMAP() -> MailBox | None:
     """Create a fresh IMAP connection and authenticate."""
     if IMAP_PASSWORD is not None:
         return MailBox(IMAP_HOST).login(IMAP_LOGIN, IMAP_PASSWORD)
@@ -445,7 +445,7 @@ async def change_keywords(directory: str, uids:list, keywords: list, set:bool) -
     return result
 
 @mcp.tool
-async def create_message(content: str) -> str:
+async def create_message(content: str) -> dict:
     """Create a message in Drafts folder
 
     Args:
