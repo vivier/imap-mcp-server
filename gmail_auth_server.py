@@ -3,6 +3,7 @@ import argparse
 import base64
 import http.server
 import json
+import ssl
 import urllib.parse
 import urllib.request
 
@@ -149,12 +150,22 @@ def parse_args():
     parser.add_argument(
         "--port",
         type=int,
-        default=8080,
-        help="Local port to listen for the OAuth redirect (default: 8080)",
+        default=8443,
+        help="Local port to listen for the OAuth redirect (default: 8443)",
     )
     parser.add_argument(
         "--whitelist",
         help="Comma-separated list of allowed email addresses (e.g., user1@example.com,user2@example.com). If not specified, all emails are allowed.",
+    )
+    parser.add_argument(
+        "--certfile",
+        required=True,
+        help="Path to SSL certificate file (PEM format)",
+    )
+    parser.add_argument(
+        "--keyfile",
+        required=True,
+        help="Path to SSL private key file (PEM format)",
     )
     return parser.parse_args()
 
@@ -162,7 +173,7 @@ def parse_args():
 def main():
     args = parse_args()
 
-    redirect_uri = f"http://localhost:{args.port}/"
+    redirect_uri = f"https://localhost:{args.port}/"
 
     # Parse whitelist if provided
     whitelist = None
@@ -176,8 +187,14 @@ def main():
     Handler.redirect_uri = redirect_uri
     Handler.whitelist = whitelist
 
-    # Start local server
+    # Start local HTTPS server
     server = http.server.HTTPServer(("localhost", args.port), Handler)
+
+    # Wrap with SSL
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    context.load_cert_chain(args.certfile, args.keyfile)
+    server.socket = context.wrap_socket(server.socket, server_side=True)
+
     print(f"Gmail OAuth server started on {redirect_uri}")
     print(f"Waiting for OAuth callbacks...")
     print(f"Use gmail_auth_client.py to trigger authentication or token refresh.")
