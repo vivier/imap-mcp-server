@@ -1,6 +1,9 @@
 # imap-mcp-server
 
-Minimal MCP server that bridges an MCP-capable agent to an IMAP4 mailbox. It uses `fastmcp` with `imap-tools` to expose a handful of read-only mailbox helpers so an agent can explore folders, search, and fetch message content without speaking IMAP directly.
+Minimal MCP server that bridges an MCP-capable agent to an IMAP4 mailbox. It uses
+`fastmcp` with `imap-tools` to expose mailbox helpers so an agent can explore
+folders, search, fetch message content, inspect and change message keywords, and
+create draft replies without speaking IMAP directly.
 
 ## Exposed tools
 - `whoami()`: Return the configured login/email address.
@@ -8,13 +11,18 @@ Minimal MCP server that bridges an MCP-capable agent to an IMAP4 mailbox. It use
 - `mailboxes_status(directory)`: Return `MESSAGES`, `RECENT`, and `UNSEEN` counts.
 - `search(directory="INBOX", criteria="ALL")`: Run an IMAP search and return matching UIDs.
 - `get_header(directory, uids)`: Fetch raw headers (dict of header name to list of values) for each UID.
+- `get_header_field(directory, uids, field)`: Fetch one header field for each UID.
 - `get_text(directory, uids)`: Fetch the plain text body for each UID.
 - `get_html(directory, uids)`: Fetch the HTML body for each UID.
 - `get_size(directory, uids)`: Fetch RFC822 message sizes in bytes.
+- `get_keywords(directory, uids)`: Fetch IMAP flags/keywords for each UID.
+- `change_keywords(directory, uids, keywords, set)`: Add or remove IMAP flags/keywords.
+- `create_message(content)`: Append a raw RFC 822 message to the `Drafts` mailbox.
 
 Notes:
 - UIDs are relative to the folder you query; use the same `directory` for `search` and subsequent `get_*` calls.
 - Message fetches are read-only and avoid marking messages as seen.
+- `change_keywords()` and `create_message()` modify the mailbox state.
 
 ## Requirements
 - Python 3.10+
