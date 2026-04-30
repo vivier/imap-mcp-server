@@ -2,8 +2,9 @@
 
 Minimal MCP server that bridges an MCP-capable agent to an IMAP4 mailbox. It uses
 `fastmcp` with `imap-tools` to expose mailbox helpers so an agent can explore
-folders, search, fetch message content, inspect and change message keywords, and
-create draft replies without speaking IMAP directly.
+folders, search, fetch message content, inspect and change message keywords,
+decrypt PGP/MIME message bodies, and create draft replies without speaking IMAP
+directly.
 
 ## Exposed tools
 - `whoami()`: Return the configured login/email address.
@@ -12,8 +13,8 @@ create draft replies without speaking IMAP directly.
 - `search(directory="INBOX", criteria="ALL")`: Run an IMAP search and return matching UIDs.
 - `get_header(directory, uids)`: Fetch raw headers (dict of header name to list of values) for each UID.
 - `get_header_field(directory, uids, field)`: Fetch one header field for each UID.
-- `get_text(directory, uids)`: Fetch the plain text body for each UID.
-- `get_html(directory, uids)`: Fetch the HTML body for each UID.
+- `get_text(directory, uids)`: Fetch the plain text body for each UID, decrypting PGP/MIME messages when possible.
+- `get_html(directory, uids)`: Fetch the HTML body for each UID, decrypting PGP/MIME messages when possible.
 - `get_size(directory, uids)`: Fetch RFC822 message sizes in bytes.
 - `get_keywords(directory, uids)`: Fetch IMAP flags/keywords for each UID.
 - `change_keywords(directory, uids, keywords, set)`: Add or remove IMAP flags/keywords.
@@ -22,6 +23,7 @@ create draft replies without speaking IMAP directly.
 Notes:
 - UIDs are relative to the folder you query; use the same `directory` for `search` and subsequent `get_*` calls.
 - Message fetches are read-only and avoid marking messages as seen.
+- `get_text()` and `get_html()` use the local `gpg` keyring for `multipart/encrypted` messages with `application/pgp-encrypted`.
 - `change_keywords()` and `create_message()` modify the mailbox state.
 
 ## Requirements
@@ -29,6 +31,7 @@ Notes:
 - An IMAP account with host, username, and either:
   - Password/app password (traditional authentication), or
   - OAuth2 token (for Gmail and other OAuth-enabled providers)
+- `gpg` installed on the host when you want to read PGP/MIME-encrypted messages
 
 ## Setup
 1) (Recommended) `python3 -m venv .venv && source .venv/bin/activate`
@@ -52,6 +55,16 @@ IMAP_HOST=imap.gmail.com
 IMAP_LOGIN=user@gmail.com
 IMAP_TOKEN=your-oauth2-access-token
 ```
+
+### Optional GnuPG Configuration
+To decrypt encrypted message bodies through `get_text()` and `get_html()`:
+```
+GNUPGHOME=/path/to/gpg-home
+```
+
+If `GNUPGHOME` is unset, the server uses the default GnuPG home directory for
+the account running `mcp-server.py`. The required secret keys must already be
+available in that keyring.
 
 To obtain a Gmail OAuth2 token:
 1) Create OAuth2 credentials in Google Cloud Console

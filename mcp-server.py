@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+import email
 import os
 import re
+import subprocess
 import sys
 import datetime
 from fastmcp import FastMCP
@@ -12,6 +14,7 @@ load_dotenv()
 
 IMAP_HOST = os.getenv("IMAP_HOST")
 IMAP_LOGIN = os.getenv("IMAP_LOGIN")
+GNUPGHOME = os.getenv("GNUPGHOME")
 
 missing_env = [name for name, value in {
     "IMAP_HOST": IMAP_HOST,
@@ -276,6 +279,61 @@ def get_messages(directory: str, uids: list, headers_only: bool = True) -> list:
 
     return messages
 
+def _decode_part(part) -> str:
+    """Decode a MIME part payload to text."""
+    payload = part.get_payload(decode=True)
+    if payload is None:
+        return ""
+
+    charset = part.get_content_charset() or "utf-8"
+    return payload.decode(charset, errors="replace")
+
+def _extract_body(obj, content_type: str) -> str:
+    """Extract concatenated MIME body parts of the requested content type."""
+    results = [ ]
+    for part in obj.walk():
+        if part.get_content_maintype() == 'multipart' or part.get_filename():
+            continue
+        if part.get_content_type() == content_type:
+            results.append(_decode_part(part))
+    return ''.join(results)
+
+def _decrypt_message_obj(obj):
+    """Decrypt PGP/MIME messages using the local gpg keyring."""
+    if obj.get_content_type() != "multipart/encrypted":
+        return obj
+
+    if obj.get_param("protocol") != "application/pgp-encrypted":
+        return obj
+
+    encrypted_parts = obj.get_payload()
+    if not isinstance(encrypted_parts, list) or len(encrypted_parts) < 2:
+        raise RuntimeError("Malformed PGP/MIME message: missing encrypted payload")
+
+    ciphertext = encrypted_parts[1].get_payload(decode=True)
+    if ciphertext is None:
+        raise RuntimeError("Malformed PGP/MIME message: empty encrypted payload")
+
+    env = os.environ.copy()
+    if GNUPGHOME:
+        env["GNUPGHOME"] = GNUPGHOME
+
+    try:
+        result = subprocess.run(
+            ["gpg", "--batch", "--decrypt"],
+            input=ciphertext,
+            capture_output=True,
+            check=True,
+            env=env,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError("gpg is not installed on the server") from exc
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.decode("utf-8", errors="replace").strip()
+        raise RuntimeError(f"gpg failed to decrypt message: {stderr}") from exc
+
+    return email.message_from_bytes(result.stdout)
+
 @mcp.tool
 async def get_header(directory: str, uids: list) -> list:
     """Read message header for the given uid in directory
@@ -341,7 +399,8 @@ async def get_text(directory: str, uids: list) -> list:
 
     texts = [ ]
     for message in messages:
-        texts.append(message.text)
+        obj = _decrypt_message_obj(message.obj)
+        texts.append(_extract_body(obj, "text/plain"))
 
     return texts
 
@@ -362,7 +421,8 @@ async def get_html(directory: str, uids: list) -> list:
 
     html = [ ]
     for message in messages:
-        html.append(message.html)
+        obj = _decrypt_message_obj(message.obj)
+        html.append(_extract_body(obj, "text/html"))
 
     return html
 
